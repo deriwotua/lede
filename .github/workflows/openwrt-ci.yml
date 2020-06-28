@@ -11,9 +11,9 @@ name: OpenWrt-CI-x86_64
 
 on:
   push:
-    branches: 
+    branches:
       - x86_64
-  #     â†‘â†‘â†‘ æ”¹æˆä½ çš„åˆ†æ”¯å, ä¸€èˆ¬æ˜¯master
+  #     ¡ü¡ü¡ü ¸Ä³ÉÄãµÄ·ÖÖ§Ãû, Ò»°ãÊÇmaster
   # schedule:
   #   - cron: 0 20 * * *
   # release:
@@ -28,47 +28,35 @@ jobs:
         uses: actions/checkout@master
         with:
           ref: x86_64
-        #      â†‘â†‘â†‘ æ”¹æˆä½ çš„åˆ†æ”¯å, ä¸€èˆ¬æ˜¯master
+        #      ¡ü¡ü¡ü ¸Ä³ÉÄãµÄ·ÖÖ§Ãû, Ò»°ãÊÇmaster
 
-      - name: Initialization environment
+      - name: Space cleanup
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
           docker rmi `docker images -q`
           echo "Deleting files, please wait ..."
-          sudo rm -rf \
-            /usr/share/dotnet \
-            /etc/mysql \
-            /etc/php
-          sudo -E apt-get -y purge \
-            azure-cli \
-            ghc* \
-            zulu* \
-            hhvm \
-            llvm* \
-            firefox \
-            google* \
-            dotnet* \
-            powershell \
-            openjdk* \
-            mysql* \
-            php*
+          sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d
+          sudo -E apt-get -y purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php*
           sudo -E apt-get update
-          sudo -E apt-get -y install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler
+          sudo -E apt-get -y install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch python3 unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib g++-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler antlr3 gperf
           sudo -E apt-get -y autoremove --purge
           sudo -E apt-get clean
 
-      - name: custom theme or software.
-        run: |
-          cd package
-          mkdir openwrt-packages
-          cd openwrt-packages
-          git clone https://github.com/openwrt-develop/luci-theme-atmaterial.git
-          git clone https://github.com/Ameykyl/luci-app-koolproxyR.git
-          git clone https://github.com/rosywrt/luci-theme-rosy.git
-          
+          # ÀûÓÃ¹ÒÔØÔÚ /mnt/ µÄ 14G ¶îÍâ¿Õ¼ä:
+          # sudo mkdir -p -m 777 /mnt/openwrt/bin /mnt/openwrt/build_dir/host /mnt/openwrt/build_dir/hostpkg /mnt/openwrt/dl /mnt/openwrt/feeds /mnt/openwrt/staging_dir
+          # ln -s /mnt/openwrt/bin ./bin
+          # mkdir -p ./build_dir/host && ln -s /mnt/openwrt/build_dir/host ./build_dir/host
+          # mkdir -p ./build_dir/host && ln -s /mnt/openwrt/build_dir/hostpkg ./build_dir/hostpkg
+          # ln -s /mnt/openwrt/dl ./dl
+          # ln -s /mnt/openwrt/feeds ./feeds
+          # ln -s /mnt/openwrt/staging_dir ./staging_dir
+
+          df -h
+
       - name: Update feeds
         run: |
+          sed -i 's/\"#src-git\"/\"src-git\"/g' ./feeds.conf.default
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
@@ -78,21 +66,21 @@ jobs:
           touch ./.config
 
           #
-          # ========================å›ºä»¶å®šåˆ¶éƒ¨åˆ†========================
+          # ========================¹Ì¼þ¶¨ÖÆ²¿·Ö========================
           # 
 
           # 
-          # å¦‚æžœä¸å¯¹æœ¬åŒºå—åšå‡ºä»»ä½•ç¼–è¾‘, åˆ™ç”Ÿæˆé»˜è®¤é…ç½®å›ºä»¶. 
+          # Èç¹û²»¶Ô±¾Çø¿é×ö³öÈÎºÎ±à¼­, ÔòÉú³ÉÄ¬ÈÏÅäÖÃ¹Ì¼þ. 
           # 
 
-          # ä»¥ä¸‹ä¸ºå®šåˆ¶åŒ–å›ºä»¶é€‰é¡¹å’Œè¯´æ˜Ž:
+          # ÒÔÏÂÎª¶¨ÖÆ»¯¹Ì¼þÑ¡ÏîºÍËµÃ÷:
           #
 
           #
-          # æœ‰äº›æ’ä»¶/é€‰é¡¹æ˜¯é»˜è®¤å¼€å¯çš„, å¦‚æžœæƒ³è¦å…³é—­, è¯·å‚ç…§ä»¥ä¸‹ç¤ºä¾‹è¿›è¡Œç¼–å†™:
+          # ÓÐÐ©²å¼þ/Ñ¡ÏîÊÇÄ¬ÈÏ¿ªÆôµÄ, Èç¹ûÏëÒª¹Ø±Õ, Çë²ÎÕÕÒÔÏÂÊ¾Àý½øÐÐ±àÐ´:
           # 
           #          =========================================
-          #         |  # å–æ¶ˆç¼–è¯‘VMwareé•œåƒ:                   |
+          #         |  # È¡Ïû±àÒëVMware¾µÏñ:                   |
           #         |  cat >> .config <<EOF                   |
           #         |  # CONFIG_VMDK_IMAGES is not set        |
           #         |  EOF                                    |
@@ -100,29 +88,29 @@ jobs:
           #
 
           # 
-          # ä»¥ä¸‹æ˜¯ä¸€äº›æå‰å‡†å¤‡å¥½çš„ä¸€äº›æ’ä»¶é€‰é¡¹.
-          # ç›´æŽ¥å–æ¶ˆæ³¨é‡Šç›¸åº”ä»£ç å—å³å¯åº”ç”¨. ä¸è¦å–æ¶ˆæ³¨é‡Šä»£ç å—ä¸Šçš„æ±‰å­—è¯´æ˜Ž.
-          # å¦‚æžœä¸éœ€è¦ä»£ç å—é‡Œçš„æŸä¸€é¡¹é…ç½®, åªéœ€è¦åˆ é™¤ç›¸åº”è¡Œ.
+          # ÒÔÏÂÊÇÒ»Ð©ÌáÇ°×¼±¸ºÃµÄÒ»Ð©²å¼þÑ¡Ïî.
+          # Ö±½ÓÈ¡Ïû×¢ÊÍÏàÓ¦´úÂë¿é¼´¿ÉÓ¦ÓÃ. ²»ÒªÈ¡Ïû×¢ÊÍ´úÂë¿éÉÏµÄºº×ÖËµÃ÷.
+          # Èç¹û²»ÐèÒª´úÂë¿éÀïµÄÄ³Ò»ÏîÅäÖÃ, Ö»ÐèÒªÉ¾³ýÏàÓ¦ÐÐ.
           #
-          # å¦‚æžœéœ€è¦å…¶ä»–æ’ä»¶, è¯·æŒ‰ç…§ç¤ºä¾‹è‡ªè¡Œæ·»åŠ .
-          # æ³¨æ„, åªéœ€æ·»åŠ ä¾èµ–é“¾é¡¶ç«¯çš„åŒ…. å¦‚æžœä½ éœ€è¦æ’ä»¶ A, åŒæ—¶ A ä¾èµ– B, å³åªéœ€è¦æ·»åŠ  A.
+          # Èç¹ûÐèÒªÆäËû²å¼þ, Çë°´ÕÕÊ¾Àý×ÔÐÐÌí¼Ó.
+          # ×¢Òâ, Ö»ÐèÌí¼ÓÒÀÀµÁ´¶¥¶ËµÄ°ü. Èç¹ûÄãÐèÒª²å¼þ A, Í¬Ê± A ÒÀÀµ B, ¼´Ö»ÐèÒªÌí¼Ó A.
           # 
-          # æ— è®ºä½ æƒ³è¦å¯¹å›ºä»¶è¿›è¡Œæ€Žæ ·çš„å®šåˆ¶, éƒ½éœ€è¦ä¸”åªéœ€è¦ä¿®æ”¹ EOF å›žçŽ¯å†…çš„å†…å®¹.
+          # ÎÞÂÛÄãÏëÒª¶Ô¹Ì¼þ½øÐÐÔõÑùµÄ¶¨ÖÆ, ¶¼ÐèÒªÇÒÖ»ÐèÒªÐÞ¸Ä EOF »Ø»·ÄÚµÄÄÚÈÝ.
           # 
 
-          # ç¼–è¯‘x64å›ºä»¶:
+          # ±àÒëx64¹Ì¼þ:
           cat >> .config <<EOF
           CONFIG_TARGET_x86=y
           CONFIG_TARGET_x86_64=y
           CONFIG_TARGET_x86_64_Generic=y
           EOF
 
-          # å›ºä»¶åŽ‹ç¼©:
+          # ¹Ì¼þÑ¹Ëõ:
           cat >> .config <<EOF
           CONFIG_TARGET_IMAGES_GZIP=y
           EOF
 
-          # ç¼–è¯‘UEFIå›ºä»¶:
+          # ±àÒëUEFI¹Ì¼þ:
           cat >> .config <<EOF
           CONFIG_EFI_IMAGES=y
           EOF
@@ -149,13 +137,13 @@ jobs:
           CONFIG_BUSYBOX_CONFIG_FEATURE_MOUNT_LOOP=y          
           EOF
 
-          # IPv6æ”¯æŒ:
+          # IPv6Ö§³Ö:
           cat >> .config <<EOF
           CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
           CONFIG_PACKAGE_ipv6helper=y
           EOF
 
-          # å¤šæ–‡ä»¶ç³»ç»Ÿæ”¯æŒ:
+          # ¶àÎÄ¼þÏµÍ³Ö§³Ö:
           cat >> .config <<EOF
           CONFIG_PACKAGE_kmod-fs-exportfs=y
           CONFIG_PACKAGE_kmod-fs-nfs=y
@@ -167,7 +155,7 @@ jobs:
           CONFIG_PACKAGE_kmod-fs-squashfs=y
           EOF
 
-          # USB3.0æ”¯æŒ:
+          # USB3.0Ö§³Ö:
           cat >> .config <<EOF
           CONFIG_PACKAGE_kmod-usb-ohci=y
           CONFIG_PACKAGE_kmod-usb-ohci-pci=y
@@ -176,7 +164,7 @@ jobs:
           CONFIG_PACKAGE_kmod-usb3=y
           EOF
 
-          # å¸¸ç”¨LuCIæ’ä»¶é€‰æ‹©:
+          # ³£ÓÃLuCI²å¼þÑ¡Ôñ:
           cat >> .config <<EOF
           CONFIG_PACKAGE_luci-app-accesscontrol=y
           CONFIG_PACKAGE_luci-app-acme=y
@@ -260,7 +248,7 @@ jobs:
           CONFIG_PACKAGE_luci-app-koolproxyR=y
           EOF
 
-          # LuCIä¸»é¢˜:
+          # LuCIÖ÷Ìâ:
           cat >> .config <<EOF
           CONFIG_PACKAGE_luci-theme-argon=y
           CONFIG_PACKAGE_luci-theme-netgear=y
@@ -268,7 +256,7 @@ jobs:
           CONFIG_PACKAGE_luci-theme-rosy=y
           EOF
 
-          # å¸¸ç”¨è½¯ä»¶åŒ…:
+          # ³£ÓÃÈí¼þ°ü:
           cat >> .config <<EOF
           CONFIG_PACKAGE_curl=y
           CONFIG_PACKAGE_htop=y
@@ -279,14 +267,14 @@ jobs:
           CONFIG_PACKAGE_wget=y
           EOF
 
-          # å–æ¶ˆç¼–è¯‘VMwareé•œåƒä»¥åŠé•œåƒå¡«å…… (ä¸è¦åˆ é™¤è¢«ç¼©è¿›çš„æ³¨é‡Šç¬¦å·):
+          # È¡Ïû±àÒëVMware¾µÏñÒÔ¼°¾µÏñÌî³ä (²»ÒªÉ¾³ý±»Ëõ½øµÄ×¢ÊÍ·ûºÅ):
           cat >> .config <<EOF
           # CONFIG_TARGET_IMAGES_PAD is not set
           # CONFIG_VMDK_IMAGES is not set
           EOF
 
           # 
-          # ========================å›ºä»¶å®šåˆ¶éƒ¨åˆ†ç»“æŸ========================
+          # ========================¹Ì¼þ¶¨ÖÆ²¿·Ö½áÊø========================
           # 
 
           sed -i 's/^[ \t]*//g' ./.config
@@ -295,16 +283,14 @@ jobs:
       - name: Download package source code
         run: |
           make download -j8
-          find dl -size -1024c -exec ls -l {} \;
           find dl -size -1024c -exec rm -f {} \;
 
       - name: Compile firmware
         run: |
-          echo -e "$(nproc) thread build."
-          make -j$(nproc) V=s
+          du -h --max-depth=1 ./bin
 
-      - name : Upload artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@master
         with:
-          name: OpenWrt firmware
-          path: bin/targets
+          name: OpenWrt_firmware
+          path: ./bin/targets/
